@@ -877,32 +877,43 @@ func (a *agentGRPC) CreateSandbox(ctx context.Context, req *pb.CreateSandboxRequ
 }
 
 func (a *agentGRPC) DestroySandbox(ctx context.Context, req *pb.DestroySandboxRequest) (*gpb.Empty, error) {
+	agentLog.Info("##### DestroySandbox() 1 #####")
+
 	if a.sandbox.running == false {
 		agentLog.WithField("sandbox", a.sandbox.id).Info("Sandbox not started, this is a no-op")
 		return emptyResp, nil
 	}
+	agentLog.Info("##### DestroySandbox() 2 #####")
 
 	a.sandbox.Lock()
+	agentLog.Info("##### DestroySandbox() 3 #####")
 	for key, c := range a.sandbox.containers {
+		agentLog.Info("##### DestroySandbox() 4 #####")
 		if err := c.removeContainer(); err != nil {
 			return emptyResp, err
 		}
 
+		agentLog.Info("##### DestroySandbox() 5 #####")
 		delete(a.sandbox.containers, key)
 	}
 	a.sandbox.Unlock()
 
+	agentLog.Info("##### DestroySandbox() 6 #####")
+
 	if err := a.sandbox.removeNetwork(); err != nil {
 		return emptyResp, err
 	}
+	agentLog.Info("##### DestroySandbox() 7 #####")
 
 	if err := removeMounts(a.sandbox.mounts); err != nil {
 		return emptyResp, err
 	}
+	agentLog.Info("##### DestroySandbox() 8 #####")
 
 	if err := a.sandbox.teardownSharedPidNs(); err != nil {
 		return emptyResp, err
 	}
+	agentLog.Info("##### DestroySandbox() 9 #####")
 
 	a.sandbox.id = ""
 	a.sandbox.containers = make(map[string]*container)
@@ -913,6 +924,8 @@ func (a *agentGRPC) DestroySandbox(ctx context.Context, req *pb.DestroySandboxRe
 	// Synchronize the caches on the system. This is needed to ensure
 	// there is no pending transactions left before the VM is shut down.
 	syscall.Sync()
+
+	agentLog.Info("##### DestroySandbox() 10 #####")
 
 	return emptyResp, nil
 }
